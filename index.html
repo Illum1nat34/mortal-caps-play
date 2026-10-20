@@ -116,8 +116,32 @@
 
       document.querySelector("#unity-loading-bar").style.display = "block";
 
+      config.devicePixelRatio = 1;                     // the canvas at CSS pixels: a 4K / 150 % screen would render 2-4x the pixels
+      (function () {
+        var info = "", soft = false;
+        try {
+          var gl = document.createElement("canvas").getContext("webgl2");
+          var ext = gl && gl.getExtension("WEBGL_debug_renderer_info");
+          info = gl ? (ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)) : "no WebGL2";
+          soft = !gl || /swiftshader|basic render|llvmpipe|software|microsoft basic/i.test(info);
+        } catch (e) { info = "error " + e; }
+        if (soft) {
+          var w = document.createElement("div");
+          w.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:10;padding:10px 16px;background:#b3261e;color:#fff;font:15px sans-serif;text-align:center";
+          w.innerHTML = "Браузер рисует игру без видеокарты — будет очень медленно. Включите аппаратное ускорение: Настройки → Система → «Использовать графическое ускорение», перезапустите браузер.<br>The browser renders without the GPU — enable hardware acceleration in its settings and restart it.";
+          document.body.appendChild(w);
+        }
+        if (/[?&]debug/.test(location.search)) {
+          var d = document.createElement("div");
+          d.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:10;padding:4px 8px;background:rgba(0,0,0,.7);color:#7f7;font:12px monospace";
+          document.body.appendChild(d);
+          var n = 0, t0 = performance.now();
+          (function tick() { n++; var t = performance.now(); if (t - t0 > 1000) { d.textContent = Math.round(n * 1000 / (t - t0)) + " fps · " + info + " · " + innerWidth + "x" + innerHeight + " dpr " + devicePixelRatio; n = 0; t0 = t; } requestAnimationFrame(tick); })();
+        }
+      })();
+
       // the data file comes in parts (GitHub Pages refuses files over 100 MB): download them, glue them into one Blob for the loader
-      var dataParts = [31457280, 31457280, 31457280, 18137654];
+      var dataParts = [31457280, 31457280, 31457280, 16501836];
       var dataTotal = dataParts.reduce(function (a, b) { return a + b; }, 0);
       var bar = document.querySelector("#unity-progress-bar-full");
       async function loadData() {
